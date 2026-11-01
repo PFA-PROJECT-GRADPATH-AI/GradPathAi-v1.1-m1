@@ -1,0 +1,28 @@
+# ─── .NET ────────────────────────────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.db
+*.db-shm
+*.db-wal
+logs/
+*.log
+
+# ─── Node / Frontend ─────────────────────────────────────────────────────────
+node_modules/
+dist/
+.env
+.env.local
+frontend/.env*
+
+# ─── IDE ─────────────────────────────────────────────────────────────────────
+.idea/
+*.swp
+.DS_Store
+
+# ─── Secrets ─────────────────────────────────────────────────────────────────
+appsettings.Production.json
+appsettings.Staging.json
+secrets.json
