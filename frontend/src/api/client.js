@@ -9,7 +9,14 @@ async function apiFetch(path, options = {}) {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Request failed' }));
-    throw Object.assign(new Error(error.detail || error.title || 'Request failed'), {
+    let message = error.detail || error.title || 'Request failed';
+    if (error.errors && typeof error.errors === 'object') {
+      const messages = Object.values(error.errors).flat().filter(Boolean);
+      if (messages.length > 0) {
+        message = messages.join('. ');
+      }
+    }
+    throw Object.assign(new Error(message), {
       status: response.status,
       data: error,
     });
@@ -40,10 +47,14 @@ export const profile = {
     }).then(async (r) => {
       const data = await r.json().catch(() => ({ detail: 'Upload failed' }));
       if (!r.ok) {
-        throw new Error(data.detail || 'Upload failed');
+        let msg = data.detail || data.title || 'Upload failed';
+        if (data.errors && typeof data.errors === 'object') {
+          const list = Object.values(data.errors).flat().filter(Boolean);
+          if (list.length > 0) msg = list.join('. ');
+        }
+        throw new Error(msg);
       }
       return data;
     });
   },
 };
-
