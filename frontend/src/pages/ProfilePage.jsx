@@ -777,103 +777,121 @@ export default function ProfilePage({ user, onLogout }) {
               </div>
             )}
 
-            {/* ── VIEW 3: ADMISSIONS SUMMARY ── */}
+            {/* ── VIEW 3: ADMISSIONS SUMMARY (Direct Items, No Redundant Outer Box) ── */}
             {activeNav === 'admissions' && (
               <div className="view-admissions">
+                {/* Clean Top Header Row */}
+                <div className="page-header-row">
+                  <div>
+                    <h3>Candidate Admissions Summary</h3>
+                    <p>A consolidated record of your verified degree, academic standing, and study abroad preferences.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleExport}
+                    disabled={exporting}
+                  >
+                    <IconDownload size={16} />
+                    <span>{exporting ? 'Exporting...' : 'Export Profile (.json)'}</span>
+                  </button>
+                </div>
+
+                {/* Direct Key Metric Tiles */}
+                <div className="candidate-summary-tiles">
+                  <div className="summary-tile">
+                    <span className="tile-title">Degree Program</span>
+                    <strong className="tile-text">{form.degree || 'BS in Computer Science'}</strong>
+                    <span className="tile-sub">Class of {form.graduationYear}</span>
+                  </div>
+
+                  <div className="summary-tile">
+                    <span className="tile-title">Academic Standing</span>
+                    <strong className="tile-text">{form.cgpa} <span className="scale">/ {form.cgpaScale}</span></strong>
+                    <span className="tile-sub">Cumulative GPA</span>
+                  </div>
+
+                  <div className="summary-tile">
+                    <span className="tile-title">Target Intake</span>
+                    <strong className="tile-text">{form.targetIntake} Intake</strong>
+                    <span className="tile-sub">{form.fundingPreference}</span>
+                  </div>
+
+                  <div className="summary-tile">
+                    <span className="tile-title">Destination Hubs</span>
+                    <div className="tile-countries-wrap">
+                      {countriesArray.length > 0 ? (
+                        countriesArray.map((c, i) => <span key={i} className="country-subtle-tag">{c}</span>)
+                      ) : (
+                        <span className="tile-text">Global</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Direct Section 1: Technical Competencies */}
                 <div className="section-card">
-                  <div className="admissions-overview-header">
-                    <div>
-                      <h3>Candidate Admissions Summary</h3>
-                      <p>A consolidated record of your verified degree, academic standing, and study abroad preferences.</p>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      onClick={handleExport}
-                      disabled={exporting}
-                    >
-                      <IconDownload size={16} />
-                      <span>{exporting ? 'Exporting...' : 'Export Profile (.json)'}</span>
-                    </button>
+                  <div className="section-card-header">
+                    <h4>Technical Competencies</h4>
+                    <p>Verified technical capabilities, languages, and frameworks</p>
                   </div>
-
-                  <div className="candidate-summary-tiles">
-                    <div className="summary-tile">
-                      <span className="tile-title">Degree Program</span>
-                      <strong className="tile-text">{form.degree || 'BS in Computer Science'}</strong>
-                      <span className="tile-sub">Class of {form.graduationYear}</span>
-                    </div>
-
-                    <div className="summary-tile">
-                      <span className="tile-title">Academic Standing</span>
-                      <strong className="tile-text">{form.cgpa} <span className="scale">/ {form.cgpaScale}</span></strong>
-                      <span className="tile-sub">Standardized GPA</span>
-                    </div>
-
-                    <div className="summary-tile">
-                      <span className="tile-title">Target Intake</span>
-                      <strong className="tile-text">{form.targetIntake} Intake</strong>
-                      <span className="tile-sub">{form.fundingPreference}</span>
-                    </div>
-
-                    <div className="summary-tile">
-                      <span className="tile-title">Destination Hubs</span>
-                      <strong className="tile-text">{form.targetCountriesCsv || 'Global'}</strong>
-                      <span className="tile-sub">Selected Regions</span>
-                    </div>
-                  </div>
-
-                  <div className="summary-content-block">
-                    <h5>Technical Competencies</h5>
-                    <div className="tags-list">
-                      {skillsArray.length > 0 ? (
-                        skillsArray.map((s, idx) => <span key={idx} className="app-tag">{s}</span>)
-                      ) : (
-                        <span className="empty-caption">No skills listed yet.</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="summary-content-block">
-                    <h5>Research Specializations</h5>
-                    <div className="tags-list">
-                      {researchArray.length > 0 ? (
-                        researchArray.map((r, idx) => <span key={idx} className="app-tag">{r}</span>)
-                      ) : (
-                        <span className="empty-caption">No research areas listed yet.</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Clean Expandable Raw Data viewer */}
-                  <div className="raw-data-accordion">
-                    <button
-                      type="button"
-                      className="accordion-toggle"
-                      onClick={() => setShowJsonRaw(prev => !prev)}
-                    >
-                      <span>{showJsonRaw ? 'Hide Data Format (.json)' : 'View Data Format (.json)'}</span>
-                      <span className="toggle-chevron">{showJsonRaw ? '▲' : '▼'}</span>
-                    </button>
-
-                    {showJsonRaw && (
-                      <div className="accordion-body">
-                        <div className="accordion-actions">
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => {
-                              navigator.clipboard.writeText(JSON.stringify(snapshot || form, null, 2));
-                              setStatusMessage({ type: 'success', text: 'Data copied to clipboard.' });
-                            }}
-                          >
-                            Copy JSON
-                          </button>
-                        </div>
-                        <pre className="code-view">{JSON.stringify(snapshot || form, null, 2)}</pre>
-                      </div>
+                  <div className="tags-list">
+                    {skillsArray.length > 0 ? (
+                      skillsArray.map((s, idx) => <span key={idx} className="app-tag">{s}</span>)
+                    ) : (
+                      <span className="empty-caption">No skills listed yet. Complete your profile to add skills.</span>
                     )}
                   </div>
+                </div>
+
+                {/* Direct Section 2: Research Specializations */}
+                <div className="section-card">
+                  <div className="section-card-header">
+                    <h4>Research Specializations</h4>
+                    <p>Primary areas of scientific inquiry and graduate study concentrations</p>
+                  </div>
+                  <div className="tags-list">
+                    {researchArray.length > 0 ? (
+                      researchArray.map((r, idx) => <span key={idx} className="app-tag">{r}</span>)
+                    ) : (
+                      <span className="empty-caption">No research areas listed yet. Complete your profile to add research focus.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Direct Section 3: Data Export Format */}
+                <div className="section-card">
+                  <div className="raw-data-header">
+                    <div>
+                      <h4>Export Data Preview (.json)</h4>
+                      <p>Machine-readable payload formatted for graduate admissions matching</p>
+                    </div>
+                    <div className="raw-data-actions">
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(JSON.stringify(snapshot || form, null, 2));
+                          setStatusMessage({ type: 'success', text: 'Data copied to clipboard.' });
+                        }}
+                      >
+                        Copy JSON
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setShowJsonRaw(prev => !prev)}
+                      >
+                        {showJsonRaw ? 'Collapse Preview' : 'Expand Preview'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {showJsonRaw && (
+                    <div className="accordion-body">
+                      <pre className="code-view">{JSON.stringify(snapshot || form, null, 2)}</pre>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

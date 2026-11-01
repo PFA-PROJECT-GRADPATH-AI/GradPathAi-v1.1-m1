@@ -103,3 +103,4 @@ export const IconCode = ({ size = 18, className = '' }) => (
     <polyline points="8 6 2 12 8 18" />
   </svg>
 );
+

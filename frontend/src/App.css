@@ -469,7 +469,8 @@ select:focus {
 }
 
 .content-container {
-  max-width: 900px;
+  max-width: 1120px;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -829,37 +830,40 @@ select:focus {
 }
 
 /* ── Admissions Overview / Summary View ── */
-.admissions-overview-header {
+.page-header-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-light);
+  gap: 1.5rem;
 }
 
-.admissions-overview-header h3 {
-  font-size: 1.05rem;
-  margin-bottom: 0.25rem;
+.page-header-row h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.3rem;
 }
 
-.admissions-overview-header p {
-  font-size: 0.8rem;
+.page-header-row p {
+  font-size: 0.85rem;
   color: var(--text-muted);
 }
 
 .candidate-summary-tiles {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
 .summary-tile {
-  background-color: var(--bg-subtle);
+  background-color: var(--bg-surface);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  padding: 1rem;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-xs);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .tile-title {
@@ -868,12 +872,13 @@ select:focus {
   color: var(--text-muted);
   text-transform: uppercase;
   font-weight: 600;
-  margin-bottom: 0.35rem;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
 }
 
 .tile-text {
   display: block;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 0.25rem;
@@ -883,7 +888,7 @@ select:focus {
 }
 
 .tile-text .scale {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: var(--text-muted);
 }
@@ -891,48 +896,48 @@ select:focus {
 .tile-sub {
   font-size: 0.75rem;
   color: var(--text-muted);
+  margin-top: auto;
 }
 
-.summary-content-block {
-  margin-bottom: 1.25rem;
+.tile-countries-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  margin-bottom: 0.35rem;
 }
 
-.summary-content-block h5 {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  margin-bottom: 0.5rem;
+.country-subtle-tag {
+  display: inline-block;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
 }
 
-.empty-caption {
-  font-size: 0.8rem;
-  color: var(--text-subtle);
-  font-style: italic;
-}
-
-/* ── Raw Data Accordion ── */
-.raw-data-accordion {
-  border-top: 1px solid var(--border-light);
-  padding-top: 1rem;
-  margin-top: 1.5rem;
-}
-
-.accordion-toggle {
-  width: 100%;
+.raw-data-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: transparent;
-  border: none;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 0.25rem 0;
+  gap: 1rem;
 }
-.accordion-toggle:hover {
-  color: var(--text-primary);
+
+.raw-data-header h4 {
+  font-size: 1rem;
+  margin-bottom: 0.2rem;
+}
+
+.raw-data-header p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.raw-data-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .accordion-body {
