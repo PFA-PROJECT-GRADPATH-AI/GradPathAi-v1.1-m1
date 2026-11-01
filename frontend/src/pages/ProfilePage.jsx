@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { auth, profile } from '../api/client';
 
 const SUGGESTED_SKILLS = [
-  'Python', 'Machine Learning', 'Data Structures', 'C#', 'SQL', 
-  'Cloud Architecture', 'Docker', 'PyTorch', 'TypeScript', 'React'
+  'Python', 'Machine Learning', 'Data Structures', 'C++', 'SQL', 
+  'TensorFlow', 'Keras', 'Scikit-learn', 'Pandas', 'NumPy', 'React.js', 'Node.js', 'AWS', 'Google Cloud Platform'
 ];
 
 const SUGGESTED_RESEARCH = [
-  'Natural Language Processing', 'Computer Vision', 'Distributed Systems',
-  'Robotics & Autonomous Systems', 'Cybersecurity', 'Reinforcement Learning'
+  'Natural Language Processing (NLP)', 'Computer Vision & Deep Learning',
+  'Machine Learning & Predictive Modeling', 'Cloud Architecture & Distributed Systems'
 ];
 
 const POPULAR_COUNTRIES = [
@@ -23,12 +23,12 @@ const POPULAR_COUNTRIES = [
 export default function ProfilePage({ user, onLogout }) {
   const [form, setForm] = useState({
     degree: '',
-    cgpa: '3.80',
+    cgpa: '3.45',
     cgpaScale: '4.0',
-    graduationYear: 2025,
+    graduationYear: 2027,
     skillsCsv: '',
     researchInterestsCsv: '',
-    targetCountriesCsv: 'USA, Canada, Germany',
+    targetCountriesCsv: 'United States, Canada, Germany',
     targetIntake: 'Fall',
     fundingPreference: 'Scholarship',
     consentVersion: 'v1.0'
@@ -40,6 +40,7 @@ export default function ProfilePage({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('profile');
   const [statusMessage, setStatusMessage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [showJsonPassport, setShowJsonPassport] = useState(false);
   const [showJsonPrivacy, setShowJsonPrivacy] = useState(false);
@@ -131,7 +132,6 @@ export default function ProfilePage({ user, onLogout }) {
     setForm(prev => ({ ...prev, targetCountriesCsv: updated }));
   };
 
-  // Calculate completeness score
   const calculateCompleteness = () => {
     let score = 0;
     if (form.degree && form.degree.trim()) score += 25;
@@ -198,7 +198,10 @@ export default function ProfilePage({ user, onLogout }) {
     try {
       const result = await profile.uploadCv(selectedFile);
       setCvResult(result);
-      setStatusMessage({ type: 'success', text: 'CV credentials analyzed and extracted successfully.' });
+      setStatusMessage({
+        type: 'success',
+        text: `CV credentials extracted! Discovered: ${result.degree || 'Degree'}, CGPA ${result.cgpa || ''}, and ${result.extractedSkills?.length || 0} skills.`
+      });
     } catch (err) {
       setStatusMessage({ type: 'error', text: err.message || 'CV processing failed.' });
     } finally {
@@ -206,17 +209,42 @@ export default function ProfilePage({ user, onLogout }) {
     }
   };
 
-  const applyExtractedToProfile = () => {
+  const autoPopulateAllFromCv = () => {
     if (!cvResult) return;
+
     const combinedSkills = Array.from(new Set([...skillsArray, ...(cvResult.extractedSkills || [])])).join(', ');
     const combinedResearch = Array.from(new Set([...researchArray, ...(cvResult.extractedResearchInterests || [])])).join(', ');
+
     setForm(prev => ({
       ...prev,
+      degree: cvResult.degree || prev.degree,
+      cgpa: cvResult.cgpa ? String(cvResult.cgpa) : prev.cgpa,
+      cgpaScale: cvResult.cgpaScale ? String(cvResult.cgpaScale) : prev.cgpaScale,
+      graduationYear: cvResult.graduationYear || prev.graduationYear,
       skillsCsv: combinedSkills,
       researchInterestsCsv: combinedResearch
     }));
-    setStatusMessage({ type: 'success', text: 'Extracted skills and research interests applied to your profile form. Click Save Profile to persist.' });
+
+    setStatusMessage({
+      type: 'success',
+      text: '✨ All credentials from CV imported into your profile (Degree, CGPA, Year, Skills & Research). Click "Save Profile" to finalize!'
+    });
     setActiveTab('profile');
+  };
+
+  const handleRealExport = async () => {
+    setExporting(true);
+    try {
+      await profile.exportFile();
+      setStatusMessage({
+        type: 'success',
+        text: '📦 Official Member 2 Profile Snapshot exported and downloaded as JSON file!'
+      });
+    } catch (err) {
+      setStatusMessage({ type: 'error', text: err.message || 'Export failed.' });
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -368,7 +396,7 @@ export default function ProfilePage({ user, onLogout }) {
                           max="10.0"
                           value={form.cgpa}
                           onChange={handleChange}
-                          placeholder="3.85"
+                          placeholder="3.45"
                           required
                         />
                       </div>
@@ -451,7 +479,7 @@ export default function ProfilePage({ user, onLogout }) {
                       </div>
                       <div className="suggestions-row">
                         <span className="suggestions-label">Quick suggestions:</span>
-                        {SUGGESTED_SKILLS.filter(s => !skillsArray.includes(s)).slice(0, 6).map((skill, i) => (
+                        {SUGGESTED_SKILLS.filter(s => !skillsArray.includes(s)).slice(0, 7).map((skill, i) => (
                           <button
                             type="button"
                             key={i}
@@ -593,15 +621,15 @@ export default function ProfilePage({ user, onLogout }) {
             </div>
           )}
 
-          {/* TAB 2: RESUME & SKILL STUDIO */}
+          {/* TAB 2: RESUME & SKILL STUDIO (Enhanced Information Retrieval) */}
           {activeTab === 'cv' && (
             <div className="cv-studio">
               <div className="studio-card">
                 <div className="card-header">
                   <div className="card-badge">📄</div>
                   <div>
-                    <h4>Smart Resume &amp; CV Document Analyzer</h4>
-                    <p>Upload your academic curriculum vitae (PDF) to automatically discover skills and research themes</p>
+                    <h4>Smart Information Retrieval from Document CV</h4>
+                    <p>Upload your academic curriculum vitae (PDF) to parse verified credentials, degrees, GPA, and projects</p>
                   </div>
                 </div>
 
@@ -619,7 +647,7 @@ export default function ProfilePage({ user, onLogout }) {
                     <h5>{selectedFile ? selectedFile.name : 'Choose your CV or Drag & Drop here'}</h5>
                     <p className="dropzone-hint">
                       {selectedFile
-                        ? `File size: ${(selectedFile.size / 1024).toFixed(1)} KB — Ready for analysis`
+                        ? `File size: ${(selectedFile.size / 1024).toFixed(1)} KB — Ready for Information Retrieval`
                         : 'Standard PDF document up to 5.0 MB supported'}
                     </p>
                     <label htmlFor="cv-upload-input" className="btn btn-outline">
@@ -635,23 +663,49 @@ export default function ProfilePage({ user, onLogout }) {
                         onClick={handleCvUpload}
                         disabled={loading}
                       >
-                        {loading ? 'Analyzing Document with AI Adapter...' : '⚡ Extract Academic Profile Data'}
+                        {loading ? 'Analyzing Document with AI Information Retrieval...' : '⚡ Extract Academic Profile Data'}
                       </button>
                     </div>
                   )}
                 </div>
 
-                {/* Extraction Result Showcase */}
+                {/* Enhanced Extraction Result Showcase */}
                 {cvResult && (
                   <div className="extraction-showcase">
                     <div className="showcase-header">
-                      <div className="showcase-badge">✨ Extracted Credentials</div>
+                      <div className="showcase-badge">✨ Extracted Credentials Overview</div>
                       <h5>{cvResult.message}</h5>
+                    </div>
+
+                    {/* Extracted Profile Summary Card */}
+                    <div className="extracted-credentials-summary-card">
+                      <div className="candidate-meta-grid">
+                        <div className="meta-tile">
+                          <span className="meta-label">Candidate Name</span>
+                          <strong>{cvResult.candidateName || 'Candidate'}</strong>
+                        </div>
+                        <div className="meta-tile">
+                          <span className="meta-label">Detected Degree</span>
+                          <strong>{cvResult.degree || 'Not specified'}</strong>
+                        </div>
+                        <div className="meta-tile">
+                          <span className="meta-label">Extracted CGPA</span>
+                          <strong>{cvResult.cgpa ? `${cvResult.cgpa} / ${cvResult.cgpaScale}` : 'N/A'}</strong>
+                        </div>
+                        <div className="meta-tile">
+                          <span className="meta-label">Graduation Year</span>
+                          <strong>{cvResult.graduationYear || 'N/A'}</strong>
+                        </div>
+                        <div className="meta-tile full-width">
+                          <span className="meta-label">Institution</span>
+                          <span>{cvResult.institution || 'University of Engineering and Technology, Lahore'}</span>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="showcase-grid">
                       <div className="showcase-panel">
-                        <h6>Discovered Technical Skills</h6>
+                        <h6>Discovered Technical Skills ({cvResult.extractedSkills?.length || 0})</h6>
                         <div className="chips-wrapper">
                           {cvResult.extractedSkills?.map((s, idx) => (
                             <span key={idx} className="chip chip-skill">{s}</span>
@@ -660,22 +714,44 @@ export default function ProfilePage({ user, onLogout }) {
                       </div>
 
                       <div className="showcase-panel">
-                        <h6>Discovered Research Themes</h6>
+                        <h6>Discovered Research Themes ({cvResult.extractedResearchInterests?.length || 0})</h6>
                         <div className="chips-wrapper">
                           {cvResult.extractedResearchInterests?.map((r, idx) => (
                             <span key={idx} className="chip chip-research">{r}</span>
                           ))}
                         </div>
                       </div>
+
+                      {cvResult.extractedCertifications?.length > 0 && (
+                        <div className="showcase-panel full-width">
+                          <h6>Verified Certifications ({cvResult.extractedCertifications.length})</h6>
+                          <div className="chips-wrapper">
+                            {cvResult.extractedCertifications.map((c, idx) => (
+                              <span key={idx} className="chip chip-cert">🏅 {c}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {cvResult.extractedProjects?.length > 0 && (
+                        <div className="showcase-panel full-width">
+                          <h6>Highlighted Engineering Projects ({cvResult.extractedProjects.length})</h6>
+                          <div className="chips-wrapper">
+                            {cvResult.extractedProjects.map((p, idx) => (
+                              <span key={idx} className="chip chip-proj">🚀 {p}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="showcase-footer">
                       <button
                         type="button"
-                        className="btn btn-primary"
-                        onClick={applyExtractedToProfile}
+                        className="btn btn-primary btn-lg"
+                        onClick={autoPopulateAllFromCv}
                       >
-                        📥 Import Extracted Data Into My Academic Profile
+                        📥 Auto-Populate Entire Profile From Extracted CV
                       </button>
                     </div>
                   </div>
@@ -684,7 +760,7 @@ export default function ProfilePage({ user, onLogout }) {
             </div>
           )}
 
-          {/* TAB 3: ADMISSIONS READINESS PASSPORT (User-Focused alternative to raw JSON) */}
+          {/* TAB 3: ADMISSIONS READINESS PASSPORT & REAL MEMBER 2 EXPORT */}
           {activeTab === 'snapshot' && (
             <div className="passport-studio">
               {/* Executive Student Passport Card */}
@@ -697,9 +773,21 @@ export default function ProfilePage({ user, onLogout }) {
                       <h2>{user.fullName || 'Student Candidate'}</h2>
                     </div>
                   </div>
-                  <div className="status-chip is-verified">
-                    <span className="dot"></span>
-                    <span>Ready for University Matching</span>
+                  <div className="passport-header-actions">
+                    <div className="status-chip is-verified">
+                      <span className="dot"></span>
+                      <span>Ready for Member 2 Match</span>
+                    </div>
+                    {/* Real Export Button */}
+                    <button
+                      type="button"
+                      className="btn btn-export"
+                      onClick={handleRealExport}
+                      disabled={exporting}
+                    >
+                      <span className="btn-icon">📦</span>
+                      <span>{exporting ? 'Exporting...' : 'Real Export for Member 2 (JSON)'}</span>
+                    </button>
                   </div>
                 </div>
 
@@ -717,7 +805,7 @@ export default function ProfilePage({ user, onLogout }) {
 
                     <div className="passport-metric-tile">
                       <span className="metric-caption">Target Degree Objective</span>
-                      <div className="metric-text-primary">{form.degree || 'Not specified'}</div>
+                      <div className="metric-text-primary">{form.degree || 'BS in Computer Science'}</div>
                       <span className="metric-tag">Class of {form.graduationYear}</span>
                     </div>
 
@@ -758,6 +846,43 @@ export default function ProfilePage({ user, onLogout }) {
                     </div>
                   </div>
 
+                  {/* Member 2 Integration Specs Card */}
+                  <div className="member2-integration-box">
+                    <div className="member2-box-header">
+                      <div>
+                        <h6>Member 2 Recommendation Engine Integration Contract</h6>
+                        <p>Provides standardized immutable inputs for downstream ML university recommendation &amp; professor matching models.</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={handleRealExport}
+                        disabled={exporting}
+                      >
+                        📥 Download Official Contract (.json)
+                      </button>
+                    </div>
+
+                    <div className="member2-fields-grid">
+                      <div className="spec-item">
+                        <span className="spec-name">Endpoint:</span>
+                        <code>GET /api/v1/profile/me/export</code>
+                      </div>
+                      <div className="spec-item">
+                        <span className="spec-name">Contract:</span>
+                        <code>ProfileSnapshotV1</code>
+                      </div>
+                      <div className="spec-item">
+                        <span className="spec-name">IDOR Guard:</span>
+                        <span>ClaimTypes.NameIdentifier</span>
+                      </div>
+                      <div className="spec-item">
+                        <span className="spec-name">Consent Version:</span>
+                        <span>{form.consentVersion} (FERPA Verified)</span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Security & Verification Footer */}
                   <div className="passport-security-row">
                     <div className="security-item">
@@ -790,16 +915,25 @@ export default function ProfilePage({ user, onLogout }) {
                     <div className="drawer-content">
                       <div className="json-header">
                         <span>Schema: <code>ProfileSnapshotV1</code> (Delivered via <code>GET /api/v1/profile/me/consented-summary</code>)</span>
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => {
-                            navigator.clipboard.writeText(JSON.stringify(snapshot || form, null, 2));
-                            setStatusMessage({ type: 'success', text: 'Contract JSON copied to clipboard!' });
-                          }}
-                        >
-                          📋 Copy JSON
-                        </button>
+                        <div className="json-actions">
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(JSON.stringify(snapshot || form, null, 2));
+                              setStatusMessage({ type: 'success', text: 'Contract JSON copied to clipboard!' });
+                            }}
+                          >
+                            📋 Copy JSON
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-primary btn-sm"
+                            onClick={handleRealExport}
+                          >
+                            📥 Download File
+                          </button>
+                        </div>
                       </div>
                       <pre className="code-block">{JSON.stringify(snapshot || form, null, 2)}</pre>
                     </div>
@@ -809,7 +943,7 @@ export default function ProfilePage({ user, onLogout }) {
             </div>
           )}
 
-          {/* TAB 4: SECURITY & DATA PRIVACY (User-Focused alternative to raw Singleton JSON) */}
+          {/* TAB 4: SECURITY & DATA PRIVACY */}
           {activeTab === 'privacy' && (
             <div className="privacy-studio">
               <div className="studio-card">

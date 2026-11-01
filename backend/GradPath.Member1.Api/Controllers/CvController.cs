@@ -25,7 +25,7 @@ public class CvController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>POST /api/v1/profile/me/cv — Adapter Pattern entry point</summary>
+    /// <summary>POST /api/v1/profile/me/cv — Information Retrieval & Adapter Pattern entry point</summary>
     [HttpPost]
     public async Task<IActionResult> UploadCv(IFormFile file)
     {
@@ -42,7 +42,7 @@ public class CvController : ControllerBase
         if (file.Length > _privacyRegistry.MaxCvFileSizeBytes)
         {
             _logger.LogWarning("Cv.UploadRejected StudentId={StudentId} Reason={Reason}", userId, "FileTooLarge");
-            return BadRequest(new { detail = $"File exceeds maximum size of 5 MB." });
+            return BadRequest(new { detail = "File exceeds maximum size of 5 MB." });
         }
 
         using var stream = file.OpenReadStream();
@@ -55,9 +55,20 @@ public class CvController : ControllerBase
 
         return Ok(new
         {
+            candidateName = result.CandidateName,
+            email = result.Email,
+            phone = result.Phone,
+            degree = result.Degree,
+            cgpa = result.Cgpa,
+            cgpaScale = result.CgpaScale,
+            graduationYear = result.GraduationYear,
+            institution = result.Institution,
             extractedSkills = result.ExtractedSkills,
             extractedResearchInterests = result.ExtractedResearchInterests,
-            message = "CV processed successfully. Review extracted data and confirm to update your profile."
+            extractedCertifications = result.ExtractedCertifications,
+            extractedProjects = result.ExtractedProjects,
+            rawSummary = result.RawSummary,
+            message = "CV credentials analyzed and extracted successfully via Information Retrieval (IR) pipeline."
         });
     }
 }

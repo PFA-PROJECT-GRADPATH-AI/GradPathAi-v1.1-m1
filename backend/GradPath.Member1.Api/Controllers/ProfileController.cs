@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using GradPath.Member1.Api.Contracts;
 using GradPath.Member1.Api.Infrastructure;
 using GradPath.Member1.Api.Services;
@@ -53,6 +55,31 @@ public class ProfileController : ControllerBase
     {
         var snapshot = await _profileService.GetProfileSnapshotAsync(GetCurrentUserId());
         return Ok(snapshot);
+    }
+
+    /// <summary>GET /api/v1/profile/me/export — Direct File Export for Member 2 Integrators</summary>
+    [HttpGet("me/export")]
+    public async Task<IActionResult> ExportSnapshotForMember2()
+    {
+        var userId = GetCurrentUserId();
+        var snapshot = await _profileService.GetProfileSnapshotAsync(userId);
+
+        var exportEnvelope = new
+        {
+            contractVersion = "v1.0",
+            targetModule = "Member2-RecommendationEngine",
+            schema = "https://schemas.gradpath.ai/contracts/member2/profile-snapshot-v1.json",
+            exportedAtUtc = DateTime.UtcNow,
+            data = snapshot
+        };
+
+        var json = JsonSerializer.Serialize(exportEnvelope, new JsonSerializerOptions { WriteIndented = true });
+        var bytes = Encoding.UTF8.GetBytes(json);
+        var fileName = $"GradPath_Member2_Snapshot_{userId.ToString()[..8]}_v1.json";
+
+        _logger.LogInformation("Profile.ExportedForMember2 StudentId={StudentId} FileName={FileName}", userId, fileName);
+
+        return File(bytes, "application/json", fileName);
     }
 
     /// <summary>GET /api/v1/profile/privacy-audit</summary>

@@ -37,6 +37,24 @@ export const profile = {
   upsert: (data) => apiFetch('/profile/me', { method: 'PUT', body: JSON.stringify(data) }),
   snapshot: () => apiFetch('/profile/me/consented-summary'),
   privacyAudit: () => apiFetch('/profile/privacy-audit'),
+  exportFile: async () => {
+    const res = await fetch(`${BASE_URL}/profile/me/export`, {
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Export failed' }));
+      throw new Error(err.detail || 'Failed to export Member 2 profile contract');
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `GradPath_Member2_ProfileSnapshot_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
+  },
   uploadCv: (file) => {
     const form = new FormData();
     form.append('file', file);
