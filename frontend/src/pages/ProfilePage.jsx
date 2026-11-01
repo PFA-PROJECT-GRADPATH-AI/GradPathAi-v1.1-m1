@@ -1,23 +1,36 @@
 import { useState, useEffect } from 'react';
 import { auth, profile } from '../api/client';
+import {
+  IconGraduation,
+  IconFileText,
+  IconCompass,
+  IconSettings,
+  IconUpload,
+  IconDownload,
+  IconCheck,
+  IconAlert,
+  IconLogOut,
+  IconGlobe,
+  IconBook
+} from '../components/Icons';
 
 const SUGGESTED_SKILLS = [
   'Python', 'Machine Learning', 'Data Structures', 'C++', 'SQL', 
-  'TensorFlow', 'Keras', 'Scikit-learn', 'Pandas', 'NumPy', 'React.js', 'Node.js', 'AWS', 'Google Cloud Platform'
+  'TensorFlow', 'Keras', 'Scikit-learn', 'Pandas', 'NumPy', 'React.js', 'Node.js', 'AWS', 'Docker'
 ];
 
 const SUGGESTED_RESEARCH = [
-  'Natural Language Processing (NLP)', 'Computer Vision & Deep Learning',
-  'Machine Learning & Predictive Modeling', 'Cloud Architecture & Distributed Systems'
+  'Natural Language Processing', 'Computer Vision',
+  'Predictive Modeling', 'Cloud & Distributed Systems'
 ];
 
 const POPULAR_COUNTRIES = [
-  { code: 'USA', name: 'United States', flag: '🇺🇸' },
-  { code: 'Canada', name: 'Canada', flag: '🇨🇦' },
-  { code: 'Germany', name: 'Germany', flag: '🇩🇪' },
-  { code: 'UK', name: 'United Kingdom', flag: '🇬🇧' },
-  { code: 'Australia', name: 'Australia', flag: '🇦🇺' },
-  { code: 'Sweden', name: 'Sweden', flag: '🇸🇪' }
+  { code: 'USA', name: 'United States' },
+  { code: 'Canada', name: 'Canada' },
+  { code: 'Germany', name: 'Germany' },
+  { code: 'UK', name: 'United Kingdom' },
+  { code: 'Australia', name: 'Australia' },
+  { code: 'Sweden', name: 'Sweden' }
 ];
 
 export default function ProfilePage({ user, onLogout }) {
@@ -36,21 +49,17 @@ export default function ProfilePage({ user, onLogout }) {
 
   const [snapshot, setSnapshot] = useState(null);
   const [cvResult, setCvResult] = useState(null);
-  const [privacyPolicy, setPrivacyPolicy] = useState(null);
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeNav, setActiveNav] = useState('profile'); // 'profile' | 'resume' | 'admissions' | 'settings'
   const [statusMessage, setStatusMessage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [showJsonPassport, setShowJsonPassport] = useState(false);
-  const [showJsonPrivacy, setShowJsonPrivacy] = useState(false);
+  const [showJsonRaw, setShowJsonRaw] = useState(false);
   const [newSkillInput, setNewSkillInput] = useState('');
   const [newResearchInput, setNewResearchInput] = useState('');
 
-  // Initial data load
   useEffect(() => {
     loadProfile();
-    loadPrivacy();
   }, []);
 
   const loadProfile = async () => {
@@ -67,16 +76,7 @@ export default function ProfilePage({ user, onLogout }) {
       const snap = await profile.snapshot();
       setSnapshot(snap);
     } catch {
-      // If no profile exists yet, keep defaults
-    }
-  };
-
-  const loadPrivacy = async () => {
-    try {
-      const p = await profile.privacyAudit();
-      setPrivacyPolicy(p);
-    } catch {
-      // Ignore
+      // Use defaults if profile is new
     }
   };
 
@@ -85,7 +85,6 @@ export default function ProfilePage({ user, onLogout }) {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // Helper tag arrays
   const skillsArray = form.skillsCsv
     ? form.skillsCsv.split(',').map(s => s.trim()).filter(Boolean)
     : [];
@@ -153,7 +152,7 @@ export default function ProfilePage({ user, onLogout }) {
     const yearNum = parseInt(form.graduationYear, 10);
 
     if (isNaN(cgpaNum) || cgpaNum <= 0 || cgpaNum > scaleNum) {
-      setStatusMessage({ type: 'error', text: `CGPA must be greater than 0 and not exceed scale (${scaleNum}).` });
+      setStatusMessage({ type: 'error', text: `GPA must be greater than 0 and not exceed ${scaleNum}.` });
       return;
     }
     if (isNaN(yearNum) || yearNum < 2020 || yearNum > 2032) {
@@ -171,7 +170,7 @@ export default function ProfilePage({ user, onLogout }) {
       });
       const snap = await profile.snapshot();
       setSnapshot(snap);
-      setStatusMessage({ type: 'success', text: 'Academic Profile saved and synchronized successfully!' });
+      setStatusMessage({ type: 'success', text: 'Your academic profile has been saved successfully.' });
     } catch (err) {
       setStatusMessage({ type: 'error', text: err.message || 'Failed to update profile.' });
     } finally {
@@ -183,7 +182,7 @@ export default function ProfilePage({ user, onLogout }) {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.name.toLowerCase().endsWith('.pdf')) {
-        setStatusMessage({ type: 'error', text: 'Only standard PDF documents (.pdf) are permitted.' });
+        setStatusMessage({ type: 'error', text: 'Only PDF documents (.pdf) are supported.' });
         return;
       }
       setSelectedFile(file);
@@ -200,10 +199,10 @@ export default function ProfilePage({ user, onLogout }) {
       setCvResult(result);
       setStatusMessage({
         type: 'success',
-        text: `CV credentials extracted! Discovered: ${result.degree || 'Degree'}, CGPA ${result.cgpa || ''}, and ${result.extractedSkills?.length || 0} skills.`
+        text: 'Resume analyzed successfully. Review the extracted credentials below.'
       });
     } catch (err) {
-      setStatusMessage({ type: 'error', text: err.message || 'CV processing failed.' });
+      setStatusMessage({ type: 'error', text: err.message || 'Document processing failed.' });
     } finally {
       setLoading(false);
     }
@@ -227,18 +226,18 @@ export default function ProfilePage({ user, onLogout }) {
 
     setStatusMessage({
       type: 'success',
-      text: '✨ All credentials from CV imported into your profile (Degree, CGPA, Year, Skills & Research). Click "Save Profile" to finalize!'
+      text: 'Extracted credentials applied to your profile. Click "Save Changes" to confirm.'
     });
-    setActiveTab('profile');
+    setActiveNav('profile');
   };
 
-  const handleRealExport = async () => {
+  const handleExport = async () => {
     setExporting(true);
     try {
       await profile.exportFile();
       setStatusMessage({
         type: 'success',
-        text: '📦 Official Member 2 Profile Snapshot exported and downloaded as JSON file!'
+        text: 'Your profile data file was downloaded successfully.'
       });
     } catch (err) {
       setStatusMessage({ type: 'error', text: err.message || 'Export failed.' });
@@ -256,756 +255,670 @@ export default function ProfilePage({ user, onLogout }) {
   };
 
   return (
-    <div className="portal-layout">
-      {/* Top Navbar */}
-      <header className="portal-navbar">
-        <div className="navbar-container">
-          <div className="navbar-brand">
-            <div className="brand-badge">🎓</div>
-            <div>
-              <span className="brand-title">GradPath AI</span>
-              <span className="brand-subtitle">Student Admissions Portal</span>
-            </div>
+    <div className="app-shell">
+      {/* ── Left Sidebar ── */}
+      <aside className="app-sidebar" aria-label="Sidebar Navigation">
+        <div className="sidebar-header">
+          <div className="sidebar-logo">
+            <IconGraduation size={24} />
           </div>
-
-          <div className="navbar-user">
-            <div className="user-profile-pill">
-              <div className="user-avatar">{user.fullName ? user.fullName[0].toUpperCase() : 'S'}</div>
-              <div className="user-details">
-                <span className="user-name">{user.fullName || 'Student'}</span>
-                <span className="user-email">{user.email}</span>
-              </div>
-            </div>
-            <button type="button" className="btn-signout" onClick={handleLogout} title="Sign Out">
-              <span>Sign Out</span>
-            </button>
+          <div className="sidebar-brand">
+            <span className="brand-name">GradPath AI</span>
+            <span className="brand-desc">Admissions Portal</span>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="navbar-tabs">
-          <div className="tabs-container">
+        <nav className="sidebar-nav">
+          <div className="nav-group-label">WORKSPACE</div>
+          <button
+            type="button"
+            className={`sidebar-nav-item ${activeNav === 'profile' ? 'active' : ''}`}
+            onClick={() => { setActiveNav('profile'); setStatusMessage(null); }}
+          >
+            <IconGraduation size={18} className="nav-icon" />
+            <span>Academic Profile</span>
+          </button>
+
+          <button
+            type="button"
+            className={`sidebar-nav-item ${activeNav === 'resume' ? 'active' : ''}`}
+            onClick={() => { setActiveNav('resume'); setStatusMessage(null); }}
+          >
+            <IconFileText size={18} className="nav-icon" />
+            <span>Resume &amp; Documents</span>
+          </button>
+
+          <button
+            type="button"
+            className={`sidebar-nav-item ${activeNav === 'admissions' ? 'active' : ''}`}
+            onClick={() => { setActiveNav('admissions'); setStatusMessage(null); }}
+          >
+            <IconCompass size={18} className="nav-icon" />
+            <span>Admissions Summary</span>
+          </button>
+
+          <div className="nav-group-label" style={{ marginTop: '1.5rem' }}>PREFERENCES</div>
+          <button
+            type="button"
+            className={`sidebar-nav-item ${activeNav === 'settings' ? 'active' : ''}`}
+            onClick={() => { setActiveNav('settings'); setStatusMessage(null); }}
+          >
+            <IconSettings size={18} className="nav-icon" />
+            <span>Account Settings</span>
+          </button>
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="user-mini-card">
+            <div className="user-initials">
+              {user.fullName ? user.fullName[0].toUpperCase() : 'S'}
+            </div>
+            <div className="user-meta">
+              <span className="user-name">{user.fullName || 'Student'}</span>
+              <span className="user-email">{user.email}</span>
+            </div>
             <button
               type="button"
-              className={`nav-tab ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => setActiveTab('profile')}
+              className="btn-logout-icon"
+              onClick={handleLogout}
+              title="Sign Out"
+              aria-label="Sign Out"
             >
-              <span className="tab-icon">📋</span>
-              <span>Academic Profile</span>
-            </button>
-            <button
-              type="button"
-              className={`nav-tab ${activeTab === 'cv' ? 'active' : ''}`}
-              onClick={() => setActiveTab('cv')}
-            >
-              <span className="tab-icon">📄</span>
-              <span>Resume &amp; Skill Studio</span>
-            </button>
-            <button
-              type="button"
-              className={`nav-tab ${activeTab === 'snapshot' ? 'active' : ''}`}
-              onClick={() => setActiveTab('snapshot')}
-            >
-              <span className="tab-icon">🎯</span>
-              <span>Admissions Readiness Passport</span>
-            </button>
-            <button
-              type="button"
-              className={`nav-tab ${activeTab === 'privacy' ? 'active' : ''}`}
-              onClick={() => setActiveTab('privacy')}
-            >
-              <span className="tab-icon">🛡️</span>
-              <span>Security &amp; Data Privacy</span>
+              <IconLogOut size={16} />
             </button>
           </div>
         </div>
-      </header>
+      </aside>
 
-      {/* Main Content Area */}
-      <main className="portal-main">
-        <div className="portal-container">
-          {/* Notification banner */}
-          {statusMessage && (
-            <div className={`notification-banner ${statusMessage.type === 'success' ? 'is-success' : 'is-error'}`}>
-              <span className="notification-icon">{statusMessage.type === 'success' ? '✅' : '⚠️'}</span>
-              <span className="notification-text">{statusMessage.text}</span>
+      {/* ── Main Content View ── */}
+      <div className="app-main">
+        {/* Top Header Bar */}
+        <header className="main-topbar">
+          <div className="topbar-title">
+            {activeNav === 'profile' && <h2>Academic Profile</h2>}
+            {activeNav === 'resume' && <h2>Resume &amp; Documents</h2>}
+            {activeNav === 'admissions' && <h2>Admissions Summary</h2>}
+            {activeNav === 'settings' && <h2>Account Settings</h2>}
+          </div>
+
+          <div className="topbar-actions">
+            {activeNav === 'admissions' && (
               <button
                 type="button"
-                className="notification-close"
-                onClick={() => setStatusMessage(null)}
+                className="btn btn-primary"
+                onClick={handleExport}
+                disabled={exporting}
               >
-                ✕
+                <IconDownload size={16} />
+                <span>{exporting ? 'Downloading...' : 'Export Profile (.json)'}</span>
               </button>
-            </div>
-          )}
+            )}
+            {activeNav === 'profile' && (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSave}
+                disabled={loading}
+              >
+                <IconCheck size={16} />
+                <span>{loading ? 'Saving...' : 'Save Changes'}</span>
+              </button>
+            )}
+          </div>
+        </header>
 
-          {/* TAB 1: ACADEMIC PROFILE */}
-          {activeTab === 'profile' && (
-            <div className="profile-studio">
-              {/* Progress Card */}
-              <div className="progress-banner-card">
-                <div className="progress-info">
-                  <h3>Admissions Profile Completeness</h3>
-                  <p>Complete your academic standing and research profile to receive tailored advisor recommendations.</p>
-                </div>
-                <div className="progress-meter">
-                  <div className="meter-label">
-                    <span>Profile Score</span>
-                    <strong>{completeness}%</strong>
-                  </div>
-                  <div className="meter-bar">
-                    <div className="meter-fill" style={{ width: `${completeness}%` }}></div>
-                  </div>
-                </div>
+        {/* Scrollable View Area */}
+        <div className="main-scrollable">
+          <div className="content-container">
+            {/* Status alert banner */}
+            {statusMessage && (
+              <div className={`app-alert ${statusMessage.type === 'success' ? 'alert-success' : 'alert-error'}`}>
+                {statusMessage.type === 'success' ? <IconCheck size={18} /> : <IconAlert size={18} />}
+                <div className="alert-text">{statusMessage.text}</div>
+                <button
+                  type="button"
+                  className="alert-close"
+                  onClick={() => setStatusMessage(null)}
+                >
+                  ✕
+                </button>
               </div>
+            )}
 
-              <form onSubmit={handleSave} className="profile-form-grid">
-                {/* Section 1: Degree & Grades */}
-                <div className="studio-card">
-                  <div className="card-header">
-                    <div className="card-badge">1</div>
+            {/* ── VIEW 1: ACADEMIC PROFILE ── */}
+            {activeNav === 'profile' && (
+              <div className="view-profile">
+                {/* Profile Completeness Bar */}
+                <div className="section-card completeness-card">
+                  <div className="completeness-header">
                     <div>
-                      <h4>Academic Credentials</h4>
-                      <p>Your current or highest completed university degree</p>
+                      <h3>Profile Completion</h3>
+                      <p>Add your academic degree, coursework, and target preferences to unlock admissions matching.</p>
                     </div>
+                    <span className="completeness-score">{completeness}%</span>
                   </div>
-
-                  <div className="form-fields">
-                    <div className="field-group">
-                      <label htmlFor="degree-input">Degree Program</label>
-                      <input
-                        id="degree-input"
-                        name="degree"
-                        type="text"
-                        value={form.degree}
-                        onChange={handleChange}
-                        placeholder="e.g. BS in Computer Science"
-                        required
-                      />
-                    </div>
-
-                    <div className="fields-row-3">
-                      <div className="field-group">
-                        <label htmlFor="cgpa-input">Cumulative GPA</label>
-                        <input
-                          id="cgpa-input"
-                          name="cgpa"
-                          type="number"
-                          step="0.01"
-                          min="0.01"
-                          max="10.0"
-                          value={form.cgpa}
-                          onChange={handleChange}
-                          placeholder="3.45"
-                          required
-                        />
-                      </div>
-
-                      <div className="field-group">
-                        <label htmlFor="scale-select">GPA Scale</label>
-                        <select
-                          id="scale-select"
-                          name="cgpaScale"
-                          value={form.cgpaScale}
-                          onChange={handleChange}
-                        >
-                          <option value="4.0">4.0 Scale</option>
-                          <option value="5.0">5.0 Scale</option>
-                          <option value="10.0">10.0 Scale</option>
-                        </select>
-                      </div>
-
-                      <div className="field-group">
-                        <label htmlFor="year-input">Graduation Year</label>
-                        <input
-                          id="year-input"
-                          name="graduationYear"
-                          type="number"
-                          min="2020"
-                          max="2032"
-                          value={form.graduationYear}
-                          onChange={handleChange}
-                          required
-                        />
-                      </div>
-                    </div>
+                  <div className="progress-track">
+                    <div className="progress-fill" style={{ width: `${completeness}%` }}></div>
                   </div>
                 </div>
 
-                {/* Section 2: Skills & Research */}
-                <div className="studio-card">
-                  <div className="card-header">
-                    <div className="card-badge">2</div>
-                    <div>
+                <form onSubmit={handleSave}>
+                  {/* Card 1: Degree & Grades */}
+                  <div className="section-card">
+                    <div className="section-card-header">
+                      <h4>Education &amp; Grades</h4>
+                      <p>Your current or highest completed degree program</p>
+                    </div>
+
+                    <div className="form-grid">
+                      <div className="form-row-full">
+                        <label htmlFor="degree-input">Degree Program</label>
+                        <input
+                          id="degree-input"
+                          name="degree"
+                          type="text"
+                          value={form.degree}
+                          onChange={handleChange}
+                          placeholder="e.g. BS in Computer Science"
+                          required
+                        />
+                      </div>
+
+                      <div className="form-row-3">
+                        <div>
+                          <label htmlFor="cgpa-input">Cumulative GPA</label>
+                          <input
+                            id="cgpa-input"
+                            name="cgpa"
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            max="10.0"
+                            value={form.cgpa}
+                            onChange={handleChange}
+                            placeholder="3.45"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label htmlFor="scale-select">GPA Scale</label>
+                          <select
+                            id="scale-select"
+                            name="cgpaScale"
+                            value={form.cgpaScale}
+                            onChange={handleChange}
+                          >
+                            <option value="4.0">4.0 Scale</option>
+                            <option value="5.0">5.0 Scale</option>
+                            <option value="10.0">10.0 Scale</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label htmlFor="year-input">Graduation Year</label>
+                          <input
+                            id="year-input"
+                            name="graduationYear"
+                            type="number"
+                            min="2020"
+                            max="2032"
+                            value={form.graduationYear}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Skills & Research */}
+                  <div className="section-card">
+                    <div className="section-card-header">
                       <h4>Technical Skills &amp; Research Focus</h4>
-                      <p>Highlight your core competencies and intended graduate research fields</p>
-                    </div>
-                  </div>
-
-                  <div className="form-fields">
-                    {/* Skills Tag Input */}
-                    <div className="field-group">
-                      <label>Technical &amp; Analytical Skills</label>
-                      <div className="tag-input-container">
-                        <div className="active-tag-list">
-                          {skillsArray.map((skill, idx) => (
-                            <span key={idx} className="chip chip-skill">
-                              {skill}
-                              <button type="button" onClick={() => removeSkill(skill)}>✕</button>
-                            </span>
-                          ))}
-                        </div>
-                        <div className="inline-add-row">
-                          <input
-                            type="text"
-                            value={newSkillInput}
-                            onChange={(e) => setNewSkillInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                addSkill(newSkillInput.trim());
-                              }
-                            }}
-                            placeholder="Add a skill and press Enter (e.g. Python, SQL)"
-                          />
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => addSkill(newSkillInput.trim())}
-                          >
-                            Add
-                          </button>
-                        </div>
-                      </div>
-                      <div className="suggestions-row">
-                        <span className="suggestions-label">Quick suggestions:</span>
-                        {SUGGESTED_SKILLS.filter(s => !skillsArray.includes(s)).slice(0, 7).map((skill, i) => (
-                          <button
-                            type="button"
-                            key={i}
-                            className="pill-suggestion"
-                            onClick={() => addSkill(skill)}
-                          >
-                            + {skill}
-                          </button>
-                        ))}
-                      </div>
+                      <p>Highlight your core competencies and intended areas of study</p>
                     </div>
 
-                    {/* Research Interests Tag Input */}
-                    <div className="field-group">
-                      <label>Primary Research Interests</label>
-                      <div className="tag-input-container">
-                        <div className="active-tag-list">
-                          {researchArray.map((interest, idx) => (
-                            <span key={idx} className="chip chip-research">
-                              {interest}
-                              <button type="button" onClick={() => removeResearch(interest)}>✕</button>
-                            </span>
-                          ))}
-                        </div>
-                        <div className="inline-add-row">
-                          <input
-                            type="text"
-                            value={newResearchInput}
-                            onChange={(e) => setNewResearchInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                addResearch(newResearchInput.trim());
-                              }
-                            }}
-                            placeholder="Add a research area and press Enter (e.g. NLP)"
-                          />
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => addResearch(newResearchInput.trim())}
-                          >
-                            Add
-                          </button>
-                        </div>
-                      </div>
-                      <div className="suggestions-row">
-                        <span className="suggestions-label">Popular areas:</span>
-                        {SUGGESTED_RESEARCH.filter(r => !researchArray.includes(r)).slice(0, 4).map((interest, i) => (
-                          <button
-                            type="button"
-                            key={i}
-                            className="pill-suggestion pill-suggestion-research"
-                            onClick={() => addResearch(interest)}
-                          >
-                            + {interest}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 3: Study Abroad Targets */}
-                <div className="studio-card">
-                  <div className="card-header">
-                    <div className="card-badge">3</div>
-                    <div>
-                      <h4>Admissions Ambitions &amp; Target Destinations</h4>
-                      <p>Select your intended intake term, preferred countries, and funding model</p>
-                    </div>
-                  </div>
-
-                  <div className="form-fields">
-                    <div className="field-group">
-                      <label>Target Destination Countries</label>
-                      <div className="countries-selector">
-                        {POPULAR_COUNTRIES.map((country) => {
-                          const isSelected = countriesArray.includes(country.code) || countriesArray.includes(country.name);
-                          return (
+                    <div className="form-grid">
+                      {/* Skills */}
+                      <div className="form-row-full">
+                        <label>Technical Skills</label>
+                        <div className="tags-container">
+                          <div className="tags-list">
+                            {skillsArray.map((skill, idx) => (
+                              <span key={idx} className="app-tag">
+                                {skill}
+                                <button type="button" onClick={() => removeSkill(skill)}>✕</button>
+                              </span>
+                            ))}
+                          </div>
+                          <div className="tag-input-row">
+                            <input
+                              type="text"
+                              value={newSkillInput}
+                              onChange={(e) => setNewSkillInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  addSkill(newSkillInput.trim());
+                                }
+                              }}
+                              placeholder="Type a skill and press Enter"
+                            />
                             <button
-                              key={country.code}
                               type="button"
-                              className={`country-pill ${isSelected ? 'selected' : ''}`}
-                              onClick={() => toggleCountry(country.name)}
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => addSkill(newSkillInput.trim())}
                             >
-                              <span className="country-flag">{country.flag}</span>
-                              <span className="country-name">{country.name}</span>
-                              {isSelected && <span className="country-check">✓</span>}
+                              Add
                             </button>
-                          );
-                        })}
+                          </div>
+                        </div>
+
+                        <div className="quick-suggestions">
+                          <span className="suggestions-title">Suggestions:</span>
+                          {SUGGESTED_SKILLS.filter(s => !skillsArray.includes(s)).slice(0, 6).map((skill, i) => (
+                            <button
+                              type="button"
+                              key={i}
+                              className="suggestion-pill"
+                              onClick={() => addSkill(skill)}
+                            >
+                              + {skill}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Research */}
+                      <div className="form-row-full">
+                        <label>Research Concentrations</label>
+                        <div className="tags-container">
+                          <div className="tags-list">
+                            {researchArray.map((r, idx) => (
+                              <span key={idx} className="app-tag">
+                                {r}
+                                <button type="button" onClick={() => removeResearch(r)}>✕</button>
+                              </span>
+                            ))}
+                          </div>
+                          <div className="tag-input-row">
+                            <input
+                              type="text"
+                              value={newResearchInput}
+                              onChange={(e) => setNewResearchInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  addResearch(newResearchInput.trim());
+                                }
+                              }}
+                              placeholder="Type a research area and press Enter"
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => addResearch(newResearchInput.trim())}
+                            >
+                              Add
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="quick-suggestions">
+                          <span className="suggestions-title">Suggestions:</span>
+                          {SUGGESTED_RESEARCH.filter(r => !researchArray.includes(r)).slice(0, 4).map((r, i) => (
+                            <button
+                              type="button"
+                              key={i}
+                              className="suggestion-pill"
+                              onClick={() => addResearch(r)}
+                            >
+                              + {r}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
+                  </div>
 
-                    <div className="fields-row-2">
-                      <div className="field-group">
-                        <label htmlFor="intake-select">Target Intake Term</label>
-                        <select
-                          id="intake-select"
-                          name="targetIntake"
-                          value={form.targetIntake}
-                          onChange={handleChange}
-                        >
-                          <option value="Fall">Fall Intake (Recommended for Aid)</option>
-                          <option value="Spring">Spring Intake</option>
-                          <option value="Summer">Summer Intake</option>
-                        </select>
+                  {/* Card 3: Study Abroad Targets */}
+                  <div className="section-card">
+                    <div className="section-card-header">
+                      <h4>Admissions Ambitions</h4>
+                      <p>Target intake terms, study destinations, and funding preferences</p>
+                    </div>
+
+                    <div className="form-grid">
+                      <div className="form-row-full">
+                        <label>Preferred Destination Countries</label>
+                        <div className="countries-grid">
+                          {POPULAR_COUNTRIES.map((country) => {
+                            const isSelected = countriesArray.includes(country.name);
+                            return (
+                              <button
+                                key={country.code}
+                                type="button"
+                                className={`country-box ${isSelected ? 'active' : ''}`}
+                                onClick={() => toggleCountry(country.name)}
+                              >
+                                <span className="country-name">{country.name}</span>
+                                {isSelected && <span className="check-mark">✓</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
 
-                      <div className="field-group">
-                        <label htmlFor="funding-select">Funding &amp; Scholarship Strategy</label>
-                        <select
-                          id="funding-select"
-                          name="fundingPreference"
-                          value={form.fundingPreference}
-                          onChange={handleChange}
-                        >
-                          <option value="Scholarship">Full Scholarship / Fellowship</option>
-                          <option value="Assistantship">Graduate Assistantship (TA / RA)</option>
-                          <option value="Self-funded">Self-Funded / Family Sponsorship</option>
-                          <option value="Any">Open to Any Form of Financial Aid</option>
-                        </select>
+                      <div className="form-row-2">
+                        <div>
+                          <label htmlFor="intake-select">Target Intake Term</label>
+                          <select
+                            id="intake-select"
+                            name="targetIntake"
+                            value={form.targetIntake}
+                            onChange={handleChange}
+                          >
+                            <option value="Fall">Fall Intake</option>
+                            <option value="Spring">Spring Intake</option>
+                            <option value="Summer">Summer Intake</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label htmlFor="funding-select">Funding Preference</label>
+                          <select
+                            id="funding-select"
+                            name="fundingPreference"
+                            value={form.fundingPreference}
+                            onChange={handleChange}
+                          >
+                            <option value="Scholarship">Scholarship / Fellowship</option>
+                            <option value="Assistantship">Graduate Assistantship (TA / RA)</option>
+                            <option value="Self-funded">Self-Funded</option>
+                            <option value="Any">Open to Any Financial Aid</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Bottom Actions */}
-                <div className="studio-actions-footer">
-                  <div className="actions-info">
-                    <span>🔒 Secured by ASP.NET Core BFF Cookie Auth</span>
+                  <div className="form-actions-bar">
+                    <button type="submit" className="btn btn-primary" disabled={loading}>
+                      <IconCheck size={16} />
+                      <span>{loading ? 'Saving...' : 'Save Changes'}</span>
+                    </button>
                   </div>
-                  <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
-                    {loading ? 'Saving Profile...' : '💾 Save & Update Academic Profile'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
+                </form>
+              </div>
+            )}
 
-          {/* TAB 2: RESUME & SKILL STUDIO (Enhanced Information Retrieval) */}
-          {activeTab === 'cv' && (
-            <div className="cv-studio">
-              <div className="studio-card">
-                <div className="card-header">
-                  <div className="card-badge">📄</div>
-                  <div>
-                    <h4>Smart Information Retrieval from Document CV</h4>
-                    <p>Upload your academic curriculum vitae (PDF) to parse verified credentials, degrees, GPA, and projects</p>
-                  </div>
-                </div>
-
-                <div className="cv-upload-zone">
-                  <input
-                    type="file"
-                    id="cv-upload-input"
-                    accept=".pdf,application/pdf"
-                    onChange={handleCvSelect}
-                    style={{ display: 'none' }}
-                  />
-
-                  <div className="dropzone-box">
-                    <div className="dropzone-icon">📑</div>
-                    <h5>{selectedFile ? selectedFile.name : 'Choose your CV or Drag & Drop here'}</h5>
-                    <p className="dropzone-hint">
-                      {selectedFile
-                        ? `File size: ${(selectedFile.size / 1024).toFixed(1)} KB — Ready for Information Retrieval`
-                        : 'Standard PDF document up to 5.0 MB supported'}
-                    </p>
-                    <label htmlFor="cv-upload-input" className="btn btn-outline">
-                      {selectedFile ? 'Change Selected PDF' : 'Select PDF File'}
-                    </label>
+            {/* ── VIEW 2: RESUME & DOCUMENTS ── */}
+            {activeNav === 'resume' && (
+              <div className="view-resume">
+                <div className="section-card">
+                  <div className="section-card-header">
+                    <h4>Resume Upload &amp; Document Parsing</h4>
+                    <p>Upload your academic curriculum vitae (PDF) to parse verified credentials, skills, and projects</p>
                   </div>
 
-                  {selectedFile && (
-                    <div className="upload-action-row">
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-lg"
-                        onClick={handleCvUpload}
-                        disabled={loading}
-                      >
-                        {loading ? 'Analyzing Document with AI Information Retrieval...' : '⚡ Extract Academic Profile Data'}
-                      </button>
+                  <div className="upload-dropzone">
+                    <input
+                      type="file"
+                      id="cv-file-input"
+                      accept=".pdf,application/pdf"
+                      onChange={handleCvSelect}
+                      style={{ display: 'none' }}
+                    />
+
+                    <div className="dropzone-inner">
+                      <div className="dropzone-icon">
+                        <IconUpload size={32} />
+                      </div>
+                      <h5>{selectedFile ? selectedFile.name : 'Select or drop your PDF Resume'}</h5>
+                      <p className="dropzone-note">
+                        {selectedFile
+                          ? `Size: ${(selectedFile.size / 1024).toFixed(1)} KB — Ready to analyze`
+                          : 'Standard PDF files up to 5 MB supported'}
+                      </p>
+                      <label htmlFor="cv-file-input" className="btn btn-secondary">
+                        {selectedFile ? 'Change PDF File' : 'Browse Files'}
+                      </label>
+                    </div>
+
+                    {selectedFile && (
+                      <div className="upload-action-center">
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={handleCvUpload}
+                          disabled={loading}
+                        >
+                          <IconFileText size={16} />
+                          <span>{loading ? 'Analyzing Document...' : 'Extract Profile Information'}</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Extraction Results */}
+                  {cvResult && (
+                    <div className="extraction-results">
+                      <div className="extraction-header">
+                        <h5>Extracted Credentials</h5>
+                        <p>{cvResult.message}</p>
+                      </div>
+
+                      {/* Summary Metrics */}
+                      <div className="extracted-meta-grid">
+                        <div className="meta-card">
+                          <span className="meta-label">Candidate Name</span>
+                          <span className="meta-value">{cvResult.candidateName || 'Candidate'}</span>
+                        </div>
+                        <div className="meta-card">
+                          <span className="meta-label">Detected Degree</span>
+                          <span className="meta-value">{cvResult.degree || 'Not detected'}</span>
+                        </div>
+                        <div className="meta-card">
+                          <span className="meta-label">Cumulative GPA</span>
+                          <span className="meta-value">{cvResult.cgpa ? `${cvResult.cgpa} / ${cvResult.cgpaScale}` : 'N/A'}</span>
+                        </div>
+                        <div className="meta-card">
+                          <span className="meta-label">Graduation Year</span>
+                          <span className="meta-value">{cvResult.graduationYear || 'N/A'}</span>
+                        </div>
+                      </div>
+
+                      {/* Discovered Skills */}
+                      <div className="extracted-group">
+                        <label>Technical Skills ({cvResult.extractedSkills?.length || 0})</label>
+                        <div className="tags-list">
+                          {cvResult.extractedSkills?.map((s, idx) => (
+                            <span key={idx} className="app-tag">{s}</span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Discovered Research Areas */}
+                      <div className="extracted-group">
+                        <label>Research Areas ({cvResult.extractedResearchInterests?.length || 0})</label>
+                        <div className="tags-list">
+                          {cvResult.extractedResearchInterests?.map((r, idx) => (
+                            <span key={idx} className="app-tag">{r}</span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Projects */}
+                      {cvResult.extractedProjects?.length > 0 && (
+                        <div className="extracted-group">
+                          <label>Notable Projects ({cvResult.extractedProjects.length})</label>
+                          <div className="tags-list">
+                            {cvResult.extractedProjects.map((p, idx) => (
+                              <span key={idx} className="app-tag">{p}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="apply-extracted-footer">
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={autoPopulateAllFromCv}
+                        >
+                          <IconCheck size={16} />
+                          <span>Apply Extracted Details to Academic Profile</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
-
-                {/* Enhanced Extraction Result Showcase */}
-                {cvResult && (
-                  <div className="extraction-showcase">
-                    <div className="showcase-header">
-                      <div className="showcase-badge">✨ Extracted Credentials Overview</div>
-                      <h5>{cvResult.message}</h5>
-                    </div>
-
-                    {/* Extracted Profile Summary Card */}
-                    <div className="extracted-credentials-summary-card">
-                      <div className="candidate-meta-grid">
-                        <div className="meta-tile">
-                          <span className="meta-label">Candidate Name</span>
-                          <strong>{cvResult.candidateName || 'Candidate'}</strong>
-                        </div>
-                        <div className="meta-tile">
-                          <span className="meta-label">Detected Degree</span>
-                          <strong>{cvResult.degree || 'Not specified'}</strong>
-                        </div>
-                        <div className="meta-tile">
-                          <span className="meta-label">Extracted CGPA</span>
-                          <strong>{cvResult.cgpa ? `${cvResult.cgpa} / ${cvResult.cgpaScale}` : 'N/A'}</strong>
-                        </div>
-                        <div className="meta-tile">
-                          <span className="meta-label">Graduation Year</span>
-                          <strong>{cvResult.graduationYear || 'N/A'}</strong>
-                        </div>
-                        <div className="meta-tile full-width">
-                          <span className="meta-label">Institution</span>
-                          <span>{cvResult.institution || 'University of Engineering and Technology, Lahore'}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="showcase-grid">
-                      <div className="showcase-panel">
-                        <h6>Discovered Technical Skills ({cvResult.extractedSkills?.length || 0})</h6>
-                        <div className="chips-wrapper">
-                          {cvResult.extractedSkills?.map((s, idx) => (
-                            <span key={idx} className="chip chip-skill">{s}</span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="showcase-panel">
-                        <h6>Discovered Research Themes ({cvResult.extractedResearchInterests?.length || 0})</h6>
-                        <div className="chips-wrapper">
-                          {cvResult.extractedResearchInterests?.map((r, idx) => (
-                            <span key={idx} className="chip chip-research">{r}</span>
-                          ))}
-                        </div>
-                      </div>
-
-                      {cvResult.extractedCertifications?.length > 0 && (
-                        <div className="showcase-panel full-width">
-                          <h6>Verified Certifications ({cvResult.extractedCertifications.length})</h6>
-                          <div className="chips-wrapper">
-                            {cvResult.extractedCertifications.map((c, idx) => (
-                              <span key={idx} className="chip chip-cert">🏅 {c}</span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {cvResult.extractedProjects?.length > 0 && (
-                        <div className="showcase-panel full-width">
-                          <h6>Highlighted Engineering Projects ({cvResult.extractedProjects.length})</h6>
-                          <div className="chips-wrapper">
-                            {cvResult.extractedProjects.map((p, idx) => (
-                              <span key={idx} className="chip chip-proj">🚀 {p}</span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="showcase-footer">
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-lg"
-                        onClick={autoPopulateAllFromCv}
-                      >
-                        📥 Auto-Populate Entire Profile From Extracted CV
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* TAB 3: ADMISSIONS READINESS PASSPORT & REAL MEMBER 2 EXPORT */}
-          {activeTab === 'snapshot' && (
-            <div className="passport-studio">
-              {/* Executive Student Passport Card */}
-              <div className="passport-card">
-                <div className="passport-header">
-                  <div className="passport-seal">
-                    <span className="seal-emblem">🎓</span>
+            {/* ── VIEW 3: ADMISSIONS SUMMARY ── */}
+            {activeNav === 'admissions' && (
+              <div className="view-admissions">
+                <div className="section-card">
+                  <div className="admissions-overview-header">
                     <div>
-                      <span className="passport-badge">Official Graduate Candidate Passport</span>
-                      <h2>{user.fullName || 'Student Candidate'}</h2>
+                      <h3>Candidate Admissions Summary</h3>
+                      <p>A consolidated record of your verified degree, academic standing, and study abroad preferences.</p>
                     </div>
-                  </div>
-                  <div className="passport-header-actions">
-                    <div className="status-chip is-verified">
-                      <span className="dot"></span>
-                      <span>Ready for Member 2 Match</span>
-                    </div>
-                    {/* Real Export Button */}
                     <button
                       type="button"
-                      className="btn btn-export"
-                      onClick={handleRealExport}
+                      className="btn btn-primary"
+                      onClick={handleExport}
                       disabled={exporting}
                     >
-                      <span className="btn-icon">📦</span>
-                      <span>{exporting ? 'Exporting...' : 'Real Export for Member 2 (JSON)'}</span>
+                      <IconDownload size={16} />
+                      <span>{exporting ? 'Exporting...' : 'Export Profile (.json)'}</span>
                     </button>
                   </div>
-                </div>
 
-                <div className="passport-body">
-                  {/* Key Metrics Row */}
-                  <div className="passport-metrics-grid">
-                    <div className="passport-metric-tile">
-                      <span className="metric-caption">Academic Standing</span>
-                      <div className="metric-main">
-                        <span className="metric-number">{form.cgpa}</span>
-                        <span className="metric-sub">/ {form.cgpaScale} Scale</span>
-                      </div>
-                      <span className="metric-tag">High Distinction</span>
+                  <div className="candidate-summary-tiles">
+                    <div className="summary-tile">
+                      <span className="tile-title">Degree Program</span>
+                      <strong className="tile-text">{form.degree || 'BS in Computer Science'}</strong>
+                      <span className="tile-sub">Class of {form.graduationYear}</span>
                     </div>
 
-                    <div className="passport-metric-tile">
-                      <span className="metric-caption">Target Degree Objective</span>
-                      <div className="metric-text-primary">{form.degree || 'BS in Computer Science'}</div>
-                      <span className="metric-tag">Class of {form.graduationYear}</span>
+                    <div className="summary-tile">
+                      <span className="tile-title">Academic Standing</span>
+                      <strong className="tile-text">{form.cgpa} <span className="scale">/ {form.cgpaScale}</span></strong>
+                      <span className="tile-sub">Standardized GPA</span>
                     </div>
 
-                    <div className="passport-metric-tile">
-                      <span className="metric-caption">Primary Intake Term</span>
-                      <div className="metric-text-primary">{form.targetIntake} Intake</div>
-                      <span className="metric-tag">{form.fundingPreference}</span>
+                    <div className="summary-tile">
+                      <span className="tile-title">Target Intake</span>
+                      <strong className="tile-text">{form.targetIntake} Intake</strong>
+                      <span className="tile-sub">{form.fundingPreference}</span>
                     </div>
 
-                    <div className="passport-metric-tile">
-                      <span className="metric-caption">Target Study Hubs</span>
-                      <div className="metric-text-primary">{form.targetCountriesCsv || 'Global'}</div>
-                      <span className="metric-tag">Multi-Country Target</span>
+                    <div className="summary-tile">
+                      <span className="tile-title">Destination Hubs</span>
+                      <strong className="tile-text">{form.targetCountriesCsv || 'Global'}</strong>
+                      <span className="tile-sub">Selected Regions</span>
                     </div>
                   </div>
 
-                  {/* Skills Cloud */}
-                  <div className="passport-section">
-                    <h5>Verified Competencies &amp; Skills</h5>
-                    <div className="chips-wrapper">
+                  <div className="summary-content-block">
+                    <h5>Technical Competencies</h5>
+                    <div className="tags-list">
                       {skillsArray.length > 0 ? (
-                        skillsArray.map((s, idx) => <span key={idx} className="chip chip-skill">{s}</span>)
+                        skillsArray.map((s, idx) => <span key={idx} className="app-tag">{s}</span>)
                       ) : (
-                        <span className="empty-notice">No skills recorded yet. Complete profile to add.</span>
+                        <span className="empty-caption">No skills listed yet.</span>
                       )}
                     </div>
                   </div>
 
-                  {/* Research Focus */}
-                  <div className="passport-section">
-                    <h5>Specialized Research Concentrations</h5>
-                    <div className="chips-wrapper">
+                  <div className="summary-content-block">
+                    <h5>Research Specializations</h5>
+                    <div className="tags-list">
                       {researchArray.length > 0 ? (
-                        researchArray.map((r, idx) => <span key={idx} className="chip chip-research">{r}</span>)
+                        researchArray.map((r, idx) => <span key={idx} className="app-tag">{r}</span>)
                       ) : (
-                        <span className="empty-notice">No research concentrations specified yet.</span>
+                        <span className="empty-caption">No research areas listed yet.</span>
                       )}
                     </div>
                   </div>
 
-                  {/* Member 2 Integration Specs Card */}
-                  <div className="member2-integration-box">
-                    <div className="member2-box-header">
-                      <div>
-                        <h6>Member 2 Recommendation Engine Integration Contract</h6>
-                        <p>Provides standardized immutable inputs for downstream ML university recommendation &amp; professor matching models.</p>
-                      </div>
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-sm"
-                        onClick={handleRealExport}
-                        disabled={exporting}
-                      >
-                        📥 Download Official Contract (.json)
-                      </button>
-                    </div>
+                  {/* Clean Expandable Raw Data viewer */}
+                  <div className="raw-data-accordion">
+                    <button
+                      type="button"
+                      className="accordion-toggle"
+                      onClick={() => setShowJsonRaw(prev => !prev)}
+                    >
+                      <span>{showJsonRaw ? 'Hide Data Format (.json)' : 'View Data Format (.json)'}</span>
+                      <span className="toggle-chevron">{showJsonRaw ? '▲' : '▼'}</span>
+                    </button>
 
-                    <div className="member2-fields-grid">
-                      <div className="spec-item">
-                        <span className="spec-name">Endpoint:</span>
-                        <code>GET /api/v1/profile/me/export</code>
-                      </div>
-                      <div className="spec-item">
-                        <span className="spec-name">Contract:</span>
-                        <code>ProfileSnapshotV1</code>
-                      </div>
-                      <div className="spec-item">
-                        <span className="spec-name">IDOR Guard:</span>
-                        <span>ClaimTypes.NameIdentifier</span>
-                      </div>
-                      <div className="spec-item">
-                        <span className="spec-name">Consent Version:</span>
-                        <span>{form.consentVersion} (FERPA Verified)</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Security & Verification Footer */}
-                  <div className="passport-security-row">
-                    <div className="security-item">
-                      <span className="security-icon">🛡️</span>
-                      <span>Consent Version: <strong>{form.consentVersion}</strong></span>
-                    </div>
-                    <div className="security-item">
-                      <span className="security-icon">🆔</span>
-                      <span>Candidate UUID: <code>{user.id}</code></span>
-                    </div>
-                    <div className="security-item">
-                      <span className="security-icon">⚡</span>
-                      <span>BFF Cookie Authenticated</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Collapsible Developer & Evaluator Payload */}
-                <div className="developer-drawer">
-                  <button
-                    type="button"
-                    className="drawer-toggle"
-                    onClick={() => setShowJsonPassport(prev => !prev)}
-                  >
-                    <span>{showJsonPassport ? '▼ Hide Machine-Readable API Payload (JSON)' : '▶ View Machine-Readable API Contract (ProfileSnapshot v1)'}</span>
-                    <span className="drawer-badge">For Member 2 Integrators</span>
-                  </button>
-
-                  {showJsonPassport && (
-                    <div className="drawer-content">
-                      <div className="json-header">
-                        <span>Schema: <code>ProfileSnapshotV1</code> (Delivered via <code>GET /api/v1/profile/me/consented-summary</code>)</span>
-                        <div className="json-actions">
+                    {showJsonRaw && (
+                      <div className="accordion-body">
+                        <div className="accordion-actions">
                           <button
                             type="button"
                             className="btn btn-secondary btn-sm"
                             onClick={() => {
                               navigator.clipboard.writeText(JSON.stringify(snapshot || form, null, 2));
-                              setStatusMessage({ type: 'success', text: 'Contract JSON copied to clipboard!' });
+                              setStatusMessage({ type: 'success', text: 'Data copied to clipboard.' });
                             }}
                           >
-                            📋 Copy JSON
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-primary btn-sm"
-                            onClick={handleRealExport}
-                          >
-                            📥 Download File
+                            Copy JSON
                           </button>
                         </div>
+                        <pre className="code-view">{JSON.stringify(snapshot || form, null, 2)}</pre>
                       </div>
-                      <pre className="code-block">{JSON.stringify(snapshot || form, null, 2)}</pre>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* TAB 4: SECURITY & DATA PRIVACY */}
-          {activeTab === 'privacy' && (
-            <div className="privacy-studio">
-              <div className="studio-card">
-                <div className="card-header">
-                  <div className="card-badge">🛡️</div>
-                  <div>
-                    <h4>Data Protection, Privacy &amp; FERPA Governance</h4>
-                    <p>How GradPath AI safeguards your academic records and personally identifiable information (PII)</p>
-                  </div>
-                </div>
-
-                <div className="privacy-pillars-grid">
-                  <div className="pillar-card">
-                    <div className="pillar-icon">🔒</div>
-                    <h5>BFF HttpOnly Security</h5>
-                    <p>Session authentication uses secure HttpOnly Lax cookies, eliminating token theft risks from browser localStorage or cross-site scripting (XSS).</p>
+            {/* ── VIEW 4: ACCOUNT SETTINGS ── */}
+            {activeNav === 'settings' && (
+              <div className="view-settings">
+                <div className="section-card">
+                  <div className="section-card-header">
+                    <h4>Account Details</h4>
+                    <p>Manage your account credentials and personal information</p>
                   </div>
 
-                  <div className="pillar-card">
-                    <div className="pillar-icon">🧼</div>
-                    <h5>Automatic PII Redaction</h5>
-                    <p>Passwords, session tokens, and raw document contents are stripped before academic analysis or evaluation matching algorithms execute.</p>
-                  </div>
-
-                  <div className="pillar-card">
-                    <div className="pillar-icon">📑</div>
-                    <h5>Strict Document Validation</h5>
-                    <p>Only verified application/pdf documents within 5 MB file size are processed, guarding against malicious payloads or oversized blobs.</p>
-                  </div>
-
-                  <div className="pillar-card">
-                    <div className="pillar-icon">⚖️</div>
-                    <h5>Consent Versioning</h5>
-                    <p>Active policy configuration <strong>{privacyPolicy?.consentVersion || 'v1.0'}</strong> maintains strict compliance with student data rights and revocable consent.</p>
-                  </div>
-                </div>
-
-                {/* Collapsible Technical Audit Log */}
-                <div className="developer-drawer">
-                  <button
-                    type="button"
-                    className="drawer-toggle"
-                    onClick={() => setShowJsonPrivacy(prev => !prev)}
-                  >
-                    <span>{showJsonPrivacy ? '▼ Hide Technical Singleton Audit' : '▶ View Technical Singleton Registry Payload'}</span>
-                    <span className="drawer-badge">ASP.NET Core IPrivacyPolicyRegistry</span>
-                  </button>
-
-                  {showJsonPrivacy && (
-                    <div className="drawer-content">
-                      <div className="json-header">
-                        <span>Delivered via <code>GET /api/v1/profile/privacy-audit</code></span>
-                      </div>
-                      <pre className="code-block">{JSON.stringify(privacyPolicy, null, 2)}</pre>
+                  <div className="settings-fields">
+                    <div className="field-row">
+                      <label>Full Name</label>
+                      <input type="text" value={user.fullName || 'Student'} disabled />
                     </div>
-                  )}
+
+                    <div className="field-row">
+                      <label>Email Address</label>
+                      <input type="email" value={user.email} disabled />
+                    </div>
+
+                    <div className="field-row">
+                      <label>Session Status</label>
+                      <div className="session-status-text">
+                        <span className="status-indicator-dot"></span>
+                        <span>Active</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="settings-footer">
+                    <button type="button" className="btn btn-secondary" onClick={handleLogout}>
+                      <IconLogOut size={16} />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

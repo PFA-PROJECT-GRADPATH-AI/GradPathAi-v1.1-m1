@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { auth } from '../api/client';
+import { IconGraduation, IconAlert } from '../components/Icons';
 
 export default function AuthPage({ onAuthenticated }) {
   const [mode, setMode] = useState('login'); // 'login' | 'register'
@@ -16,7 +17,6 @@ export default function AuthPage({ onAuthenticated }) {
     e.preventDefault();
     setError('');
 
-    // Client-side quick checks
     if (mode === 'register' && (!form.fullName || form.fullName.trim().length < 2)) {
       setError('Please provide your full legal name.');
       return;
@@ -67,9 +67,11 @@ export default function AuthPage({ onAuthenticated }) {
       <div className="auth-wrapper">
         {/* Brand header */}
         <div className="auth-brand">
-          <div className="brand-icon">🎓</div>
+          <div className="brand-icon">
+            <IconGraduation size={28} />
+          </div>
           <h1>GradPath AI</h1>
-          <p className="brand-tagline">Intelligent Graduate School Admissions &amp; Profile Studio</p>
+          <p className="brand-tagline">Graduate Admissions &amp; Academic Profile Portal</p>
         </div>
 
         {/* Card */}
@@ -93,7 +95,7 @@ export default function AuthPage({ onAuthenticated }) {
 
           {error && (
             <div className="alert alert-error" role="alert">
-              <span className="alert-icon">⚠️</span>
+              <IconAlert size={16} />
               <div className="alert-message">{error}</div>
             </div>
           )}
@@ -102,95 +104,72 @@ export default function AuthPage({ onAuthenticated }) {
             {mode === 'register' && (
               <div className="field-group">
                 <label htmlFor="reg-name">Full Legal Name</label>
-                <div className="input-affix">
-                  <span className="affix-icon">👤</span>
-                  <input
-                    id="reg-name"
-                    name="fullName"
-                    type="text"
-                    value={form.fullName}
-                    onChange={handleChange}
-                    placeholder="e.g. Sarah Jenkins"
-                    required
-                  />
-                </div>
+                <input
+                  id="reg-name"
+                  name="fullName"
+                  type="text"
+                  value={form.fullName}
+                  onChange={handleChange}
+                  placeholder="e.g. Sarah Jenkins"
+                  required
+                />
               </div>
             )}
 
             <div className="field-group">
               <label htmlFor="auth-email">University or Personal Email</label>
-              <div className="input-affix">
-                <span className="affix-icon">✉️</span>
-                <input
-                  id="auth-email"
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="student@university.edu"
-                  required
-                />
-              </div>
+              <input
+                id="auth-email"
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="student@university.edu"
+                required
+              />
             </div>
 
             <div className="field-group">
               <div className="field-header">
                 <label htmlFor="auth-password">Password</label>
                 {mode === 'register' && (
-                  <span className="field-hint">Min. 6 characters &amp; 1 digit</span>
+                  <span className="field-hint">Min. 6 characters &amp; 1 number</span>
                 )}
               </div>
-              <div className="input-affix">
-                <span className="affix-icon">🔒</span>
-                <input
-                  id="auth-password"
-                  name="password"
-                  type="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
+              <input
+                id="auth-password"
+                name="password"
+                type="password"
+                value={form.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                required
+              />
             </div>
 
             <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
               {loading ? (
-                <span className="spinner-inline">Processing...</span>
+                'Processing...'
               ) : mode === 'login' ? (
-                'Sign In to Dashboard'
+                'Sign In'
               ) : (
-                'Create Free Student Account'
+                'Create Account'
               )}
             </button>
           </form>
 
           <div className="auth-separator">
-            <span>or test with 1-click</span>
+            <span>or</span>
           </div>
 
           <button
             type="button"
-            className="btn btn-outline btn-block btn-demo"
+            className="btn btn-secondary btn-block"
             onClick={handleDemoLogin}
             disabled={loading}
           >
-            <span className="btn-icon">⚡</span>
-            <span>Instant Demo Student Login</span>
+            <span>Quick Demo Student Sign In</span>
           </button>
-
-          <div className="auth-footer-note">
-            <span>Pre-loaded credentials: <code>demo@gradpath.ai</code></span>
-          </div>
-        </div>
-
-        {/* Security / trust badge */}
-        <div className="trust-badges">
-          <span>🔒 256-Bit SSL Protection</span>
-          <span>•</span>
-          <span>FERPA &amp; GDPR Compliant</span>
-          <span>•</span>
-          <span>BFF Secure Session</span>
         </div>
       </div>
     </div>
